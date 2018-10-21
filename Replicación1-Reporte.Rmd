@@ -1,0 +1,569 @@
+---
+title: "Replicación 1 – Reporte"
+author: "Castro, Ballesteros, Cilveti"
+date: "Entrega: viernes 12 de octubre de 2018"
+header-includes:
+  - \usepackage{dcolumn}
+  - \usepackage{fvextra}
+  - \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy = TRUE, cache = TRUE)
+library(modelr)
+library(knitr)
+```
+
+El presente reporte contiene la replicación del paper:    
+  
+\textbf{Ebonya L. Washington. Female Socialization: How Daughters Affect Their Legislator Fathers’ Voting on Women’s Issues. \textit{The American Economic Review}, 98(1): 311-332, 2008.}  
+
+y forma parte del curso de Metodología Política Avanzada impartido por el Dr. Adrián Lucardi en el Instituto Tecnológico Autónomo de México (ITAM), semestre otoño 2018.      
+
+La replicación consiste del presente documento, el `Script` *Replicación1-Script.R* y el archivo de trabajo de `R Markdown` *Replicación1-Reporte.Rmd*.      
+
+***
+```{r loading, message=FALSE, warning=FALSE}
+library (lfe)
+library (ggplot2)
+library (readstata13)
+library (stargazer)
+library(tidyverse)
+library(ggrepel)
+library(ggthemes)
+library(cowplot)
+library(dplyr)
+
+setwd ("/Volumes/RAC BANXICO/Semestre Otoño 2018/Metodología Política Avanzada/Replicacion 01/Archivos de Trabajo")
+genold108 <- read.dta13 ("genold108.dta")
+basic <- read.dta13 ("basic.dta")
+```
+
+# I. Replicación
+## (1) Congresos.
+
+La base original contiene información sobre cuatro Congresos estadounidenses (105to-108vo, de 1997-2004). Sin embargo, cada modelo se centra en los legisladores de un solo Congreso. Comienza creando 4 bases distintas, una para cada Congreso.
+
+## (2) Estadísticas descriptivas
+
+\begin{table}[!htbp] \centering 
+  \caption{Table 2 - Impact of Female Children on Legislator Voting on Women's Issues} 
+  \label{}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{5}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-6} 
+\\[-1.8ex] & \multicolumn{1}{c}{nowtot} & \multicolumn{4}{c}{aauw} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)}\\ 
+\hline \\[-1.8ex] 
+ Number of female children & 2.300 & 2.385 & 1.688 & 2.421 & 2.250 \\ 
+  & (1.038) & (1.124) & (1.136) & (1.092) & (1.145) \\ 
+  Female & 10.838 & 9.194 & 10.440 & 7.564 & 6.909 \\ 
+  & (2.690) & (2.910) & (2.881) & (2.618) & (2.730) \\ 
+  White & 1.860 & 0.144 & 2.594 & -2.626 & 1.939 \\ 
+  & (3.451) & (3.676) & (3.833) & (3.150) & (3.211) \\ 
+  Republican & -44.903 & -60.468 & -55.927 & -63.216 & -63.932 \\ 
+  & (2.109) & (2.280) & (2.335) & (2.120) & (2.436) \\ 
+  Age & 0.661 & 0.854 & 2.034 & 1.298 & 2.300 \\ 
+  & (0.800) & (0.860) & (0.902) & (0.799) & (0.860) \\ 
+  Age squared & -0.006 & -0.006 & -0.018 & -0.012 & -0.021 \\ 
+  & (0.008) & (0.008) & (0.009) & (0.007) & (0.008) \\ 
+  Service length & 0.235 & -0.208 & -0.726 & -0.100 & -0.139 \\ 
+  & (0.300) & (0.324) & (0.380) & (0.346) & (0.327) \\ 
+  Service length squared & -0.009 & 0.004 & 0.025 & -0.0002 & 0.004 \\ 
+  & (0.010) & (0.011) & (0.013) & (0.011) & (0.010) \\ 
+  No religion & 7.262 & 5.671 & 5.353 & 7.027 & -7.137 \\ 
+  & (7.022) & (7.606) & (7.791) & (7.176) & (7.499) \\ 
+  Catholic & -3.974 & -4.505 & -2.277 & -4.016 & -5.468 \\ 
+  & (1.941) & (2.091) & (2.129) & (1.987) & (2.077) \\ 
+  Other Christian & 0.769 & 3.204 & 1.690 & 1.646 & 3.874 \\ 
+  & (4.600) & (4.983) & (4.912) & (4.491) & (4.684) \\ 
+  Other religion & 10.866 & 9.683 & 11.890 & 10.286 & 3.156 \\ 
+  & (3.752) & (4.047) & (4.343) & (3.785) & (3.959) \\ 
+  Democratic vote share & 84.158 & 62.148 & 57.437 & 56.206 & 66.950 \\ 
+  & (10.869) & (11.568) & (12.018) & (9.092) & (10.889) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{430} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.820} & \multicolumn{1}{c}{0.840} & \multicolumn{1}{c}{0.814} & \multicolumn{1}{c}{0.865} & \multicolumn{1}{c}{0.859} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.806} & \multicolumn{1}{c}{0.828} & \multicolumn{1}{c}{0.801} & \multicolumn{1}{c}{0.855} & \multicolumn{1}{c}{0.847} \\ 
+Residual Std. Error & \multicolumn{1}{c}{16.093 (df = 398)} & \multicolumn{1}{c}{17.441 (df = 402)} & \multicolumn{1}{c}{17.880 (df = 403)} & \multicolumn{1}{c}{16.491 (df = 402)} & \multicolumn{1}{c}{17.230 (df = 400)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular}} 
+\end{table}
+
+## Tabla 2 con errores robustos y agrupados
+
+Notemos que al usar errores robustos o agrupados, no cambian los coeficientes estimados de la regresión sino únicamente los erroes estimados. Estos son marginalmente mayores. 
+
+\begin{table}[!htbp] \centering 
+  \caption{Robust Errors. Table 2 - Impact of Female Children on Legislator Voting on Women's Issues} 
+  \label{}
+  \resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{5}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-6} 
+\\[-1.8ex] & \multicolumn{1}{c}{nowtot} & \multicolumn{4}{c}{aauw} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)}\\ 
+\hline \\[-1.8ex] 
+ Number of female children & 2.300 & 2.385 & 1.688 & 2.421 & 2.250 \\ 
+  & (1.075) & (1.198) & (1.130) & (1.021) & (1.098) \\ 
+  Female & 10.838 & 9.194 & 10.440 & 7.564 & 6.909 \\ 
+  & (2.881) & (3.336) & (3.172) & (2.221) & (2.342) \\ 
+  White & 1.860 & 0.144 & 2.594 & -2.626 & 1.939 \\ 
+  & (3.351) & (3.539) & (3.360) & (3.246) & (2.880) \\ 
+  Republican & -44.903 & -60.468 & -55.927 & -63.216 & -63.932 \\ 
+  & (2.729) & (2.993) & (2.800) & (2.911) & (3.571) \\ 
+  Age & 0.661 & 0.854 & 2.034 & 1.298 & 2.300 \\ 
+  & (0.793) & (0.997) & (0.861) & (0.833) & (0.806) \\ 
+  Age squared & -0.006 & -0.006 & -0.018 & -0.012 & -0.021 \\ 
+  & (0.008) & (0.010) & (0.009) & (0.008) & (0.008) \\ 
+  Service length & 0.235 & -0.208 & -0.726 & -0.100 & -0.139 \\ 
+  & (0.282) & (0.320) & (0.352) & (0.387) & (0.325) \\ 
+  Service length squared & -0.009 & 0.004 & 0.025 & -0.0002 & 0.004 \\ 
+  & (0.010) & (0.012) & (0.010) & (0.012) & (0.011) \\ 
+  No religion & 7.262 & 5.671 & 5.353 & 7.027 & -7.137 \\ 
+  & (3.173) & (3.468) & (3.269) & (3.530) & (3.455) \\ 
+  Catholic & -3.974 & -4.505 & -2.277 & -4.016 & -5.468 \\ 
+  & (2.227) & (2.435) & (2.265) & (2.039) & (2.165) \\ 
+  Other Christian & 0.769 & 3.204 & 1.690 & 1.646 & 3.874 \\ 
+  & (4.089) & (5.062) & (4.155) & (3.442) & (4.392) \\ 
+  Other religion & 10.866 & 9.683 & 11.890 & 10.286 & 3.156 \\ 
+  & (3.000) & (3.728) & (3.881) & (5.157) & (5.228) \\ 
+  Democratic vote share & 84.158 & 62.148 & 57.437 & 56.206 & 66.950 \\ 
+  & (11.681) & (13.065) & (11.781) & (11.056) & (13.239) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{430} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.820} & \multicolumn{1}{c}{0.840} & \multicolumn{1}{c}{0.814} & \multicolumn{1}{c}{0.865} & \multicolumn{1}{c}{0.859} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.806} & \multicolumn{1}{c}{0.828} & \multicolumn{1}{c}{0.801} & \multicolumn{1}{c}{0.855} & \multicolumn{1}{c}{0.847} \\ 
+Residual Std. Error & \multicolumn{1}{c}{16.093 (df = 398)} & \multicolumn{1}{c}{17.441 (df = 402)} & \multicolumn{1}{c}{17.880 (df = 403)} & \multicolumn{1}{c}{16.491 (df = 402)} & \multicolumn{1}{c}{17.230 (df = 400)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular}} 
+\end{table} 
+
+
+\begin{table}[!htbp] \centering 
+  \caption{Grouped Errors (by state). Table 2 - Impact of Female Children on Legislator Voting on Women's Issues} 
+  \label{} 
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{5}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-6} 
+\\[-1.8ex] & \multicolumn{1}{c}{nowtot} & \multicolumn{4}{c}{aauw} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)}\\ 
+\hline \\[-1.8ex] 
+ Number of female children & 2.300 & 2.385 & 1.688 & 2.421 & 2.250 \\ 
+  & (1.045) & (1.068) & (0.942) & (1.021) & (0.896) \\ 
+  Female & 10.838 & 9.194 & 10.440 & 7.564 & 6.909 \\ 
+  & (2.839) & (3.249) & (3.293) & (2.034) & (2.172) \\ 
+  White & 1.860 & 0.144 & 2.594 & -2.626 & 1.939 \\ 
+  & (3.327) & (3.293) & (3.146) & (2.923) & (2.598) \\ 
+  Republican & -44.903 & -60.468 & -55.927 & -63.216 & -63.932 \\ 
+  & (2.875) & (3.947) & (3.461) & (3.468) & (3.907) \\ 
+  Age & 0.661 & 0.854 & 2.034 & 1.298 & 2.300 \\ 
+  & (0.794) & (1.100) & (0.700) & (0.914) & (0.870) \\ 
+  Age squared & -0.006 & -0.006 & -0.018 & -0.012 & -0.021 \\ 
+  & (0.008) & (0.012) & (0.007) & (0.009) & (0.008) \\ 
+  Service length & 0.235 & -0.208 & -0.726 & -0.100 & -0.139 \\ 
+  & (0.254) & (0.333) & (0.419) & (0.431) & (0.365) \\ 
+  Service length squared & -0.009 & 0.004 & 0.025 & -0.0002 & 0.004 \\ 
+  & (0.008) & (0.011) & (0.011) & (0.013) & (0.011) \\ 
+  No religion & 7.262 & 5.671 & 5.353 & 7.027 & -7.137 \\ 
+  & (2.141) & (3.131) & (2.858) & (2.499) & (3.122) \\ 
+  Catholic & -3.974 & -4.505 & -2.277 & -4.016 & -5.468 \\ 
+  & (1.875) & (2.154) & (1.894) & (1.622) & (2.538) \\ 
+  Other Christian & 0.769 & 3.204 & 1.690 & 1.646 & 3.874 \\ 
+  & (5.501) & (5.660) & (5.667) & (4.095) & (5.061) \\ 
+  Other religion & 10.866 & 9.683 & 11.890 & 10.286 & 3.156 \\ 
+  & (2.738) & (3.093) & (3.301) & (4.750) & (4.955) \\ 
+  Democratic vote share & 84.158 & 62.148 & 57.437 & 56.206 & 66.950 \\ 
+  & (12.887) & (13.112) & (14.506) & (12.625) & (15.169) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{430} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.820} & \multicolumn{1}{c}{0.840} & \multicolumn{1}{c}{0.814} & \multicolumn{1}{c}{0.865} & \multicolumn{1}{c}{0.859} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.806} & \multicolumn{1}{c}{0.828} & \multicolumn{1}{c}{0.801} & \multicolumn{1}{c}{0.855} & \multicolumn{1}{c}{0.847} \\ 
+Residual Std. Error & \multicolumn{1}{c}{16.093 (df = 398)} & \multicolumn{1}{c}{17.441 (df = 402)} & \multicolumn{1}{c}{17.880 (df = 403)} & \multicolumn{1}{c}{16.491 (df = 402)} & \multicolumn{1}{c}{17.230 (df = 400)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular}} 
+\end{table} 
+
+### Mismo modelo, menos controles
+
+\begin{table}[!htbp] \centering 
+  \caption{Table 2 - Impact of Female Children on Legislator Voting on Women's Issues. Grouped SE.} 
+  \label{}
+  \resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{5}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-6} 
+\\[-1.8ex] & \multicolumn{1}{c}{nowtot} & \multicolumn{4}{c}{aauw} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)}\\ 
+\hline \\[-1.8ex] 
+ Number of female children & 3.045 & 3.212 & 2.030 & 3.926 & 1.980 \\ 
+  & (1.385) & (1.580) & (1.565) & (1.900) & (1.685) \\ 
+  Democratic vote share & 194.973 & 211.872 & 199.377 & 202.919 & 230.192 \\ 
+  & (9.780) & (15.657) & (14.276) & (7.979) & (11.116) \\ 
+  1 child & 1.500 & 2.640 & -0.634 & 7.041 & -3.159 \\ 
+  & (4.213) & (5.707) & (5.923) & (7.551) & (8.013) \\ 
+  2 children & -5.109 & -3.967 & -5.607 & -6.173 & -10.130 \\ 
+  & (3.655) & (5.252) & (5.377) & (6.541) & (6.006) \\ 
+  3 children & -6.370 & -5.690 & -6.585 & -7.309 & -12.044 \\ 
+  & (3.693) & (4.643) & (4.371) & (5.434) & (5.593) \\ 
+  4 children & -14.191 & -14.759 & -13.418 & -13.414 & -16.816 \\ 
+  & (5.245) & (6.811) & (5.537) & (6.867) & (6.819) \\ 
+  5 children & -14.617 & -17.421 & -16.784 & -18.475 & -22.289 \\ 
+  & (6.248) & (7.698) & (6.760) & (6.816) & (7.892) \\ 
+  6 children & -19.307 & -23.724 & -33.559 & -40.423 & -35.529 \\ 
+  & (12.512) & (15.196) & (10.686) & (10.762) & (11.661) \\ 
+  7 children & -15.330 & -15.142 & -7.486 & 1.588 & 5.563 \\ 
+  & (6.346) & (9.537) & (19.620) & (23.067) & (21.630) \\ 
+  8 children & -38.809 & -51.481 & -35.131 & -36.404 & -24.367 \\ 
+  & (12.331) & (16.511) & (12.320) & (15.346) & (14.650) \\ 
+  9 children & -28.997 & -34.498 &  & -43.313 & -44.182 \\ 
+  & (8.110) & (10.431) &  & (16.133) & (14.943) \\ 
+  10 children & -34.150 & -38.184 & -28.730 & -37.821 & -30.131 \\ 
+  & (6.378) & (8.801) & (7.805) & (8.445) & (11.271) \\ 
+  Region 2 &  &  &  &  & -58.875 \\ 
+  &  &  &  &  & (12.520) \\ 
+  Region 3 & -23.929 & -25.954 & -19.362 & -17.861 & -23.916 \\ 
+  & (5.948) & (7.390) & (7.300) & (5.570) & (4.080) \\ 
+  Region 4 & -21.734 & -22.880 & -21.002 & -13.984 & -19.890 \\ 
+  & (6.445) & (7.889) & (6.571) & (6.138) & (4.418) \\ 
+  Region 5 & -20.268 & -15.622 & -13.419 & -4.765 & -11.443 \\ 
+  & (7.788) & (9.583) & (8.000) & (7.259) & (5.017) \\ 
+  Region 6 & -18.691 & -19.115 & -16.475 & -12.123 & -12.770 \\ 
+  & (6.568) & (8.859) & (6.823) & (6.213) & (6.881) \\ 
+  Region 7 & -32.738 & -32.369 & -24.453 & -18.554 & -15.372 \\ 
+  & (6.711) & (8.602) & (8.514) & (7.702) & (5.614) \\ 
+  Region 8 & -24.374 & -22.701 & -22.623 & 2.530 & 3.968 \\ 
+  & (10.691) & (11.559) & (11.957) & (9.825) & (8.169) \\ 
+  Region 9 & -30.890 & -36.719 & -27.021 & -9.706 & -13.161 \\ 
+  & (7.648) & (9.169) & (8.576) & (8.380) & (6.485) \\ 
+  Region 1 & -11.924 & -14.026 & -10.373 & -2.842 & -7.758 \\ 
+  & (6.654) & (8.267) & (7.455) & (7.466) & (6.317) \\ 
+  Constant & -33.429 & -36.059 & -26.678 & -46.080 & -50.925 \\ 
+  & (7.881) & (12.101) & (10.510) & (8.176) & (8.790) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{430} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.569} & \multicolumn{1}{c}{0.515} & \multicolumn{1}{c}{0.491} & \multicolumn{1}{c}{0.527} & \multicolumn{1}{c}{0.592} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.548} & \multicolumn{1}{c}{0.492} & \multicolumn{1}{c}{0.468} & \multicolumn{1}{c}{0.504} & \multicolumn{1}{c}{0.571} \\ 
+Residual Std. Error & \multicolumn{1}{c}{24.563 (df = 409)} & \multicolumn{1}{c}{29.942 (df = 413)} & \multicolumn{1}{c}{29.204 (df = 414)} & \multicolumn{1}{c}{30.441 (df = 413)} & \multicolumn{1}{c}{28.886 (df = 411)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular}} 
+\end{table} 
+
+#### Todos los Congresos juntos. Distintos tipos de errores.
+\begin{table}[!htbp] \centering 
+  \caption{Table 2 - Impact of Female Children on Legislator Voting on Women's Issues. All Congresses.} 
+  \label{}
+    \resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{3}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-4} 
+\\[-1.8ex] & \multicolumn{3}{c}{nowtot} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1 - SE)} & \multicolumn{1}{c}{(2 - Robust SE)} & \multicolumn{1}{c}{(3 - Grouped SE by Legislator)}\\ 
+\hline \\[-1.8ex] 
+ ngirls & 2.300 & 2.300 & 2.300 \\ 
+  & (1.038) & (1.075) & (1.075) \\ 
+  female & 10.838 & 10.838 & 10.838 \\ 
+  & (2.690) & (2.881) & (2.881) \\ 
+  white & 1.860 & 1.860 & 1.860 \\ 
+  & (3.451) & (3.351) & (3.351) \\ 
+  repub & -44.903 & -44.903 & -44.903 \\ 
+  & (2.109) & (2.729) & (2.729) \\ 
+  age & 0.661 & 0.661 & 0.661 \\ 
+  & (0.800) & (0.793) & (0.793) \\ 
+  I(age$\hat{\mkern6mu}$2) & -0.006 & -0.006 & -0.006 \\ 
+  & (0.008) & (0.008) & (0.008) \\ 
+  srvlng & 0.235 & 0.235 & 0.235 \\ 
+  & (0.300) & (0.282) & (0.282) \\ 
+  I(srvlng$\hat{\mkern6mu}$2) & -0.009 & -0.009 & -0.009 \\ 
+  & (0.010) & (0.010) & (0.010) \\ 
+  religionNone & 7.262 & 7.262 & 7.262 \\ 
+  & (7.022) & (3.173) & (3.173) \\ 
+  religionCatholic & -3.974 & -3.974 & -3.974 \\ 
+  & (1.941) & (2.227) & (2.227) \\ 
+  religionOther Christian & 0.769 & 0.769 & 0.769 \\ 
+  & (4.600) & (4.089) & (4.089) \\ 
+  religionOther religion & 10.866 & 10.866 & 10.866 \\ 
+  & (3.752) & (3.000) & (3.000) \\ 
+  demvote & 84.158 & 84.158 & 84.158 \\ 
+  & (10.869) & (11.681) & (11.681) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{430} & \multicolumn{1}{c}{430} & \multicolumn{1}{c}{430} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.820} & \multicolumn{1}{c}{0.820} & \multicolumn{1}{c}{0.820} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.806} & \multicolumn{1}{c}{0.806} & \multicolumn{1}{c}{0.806} \\ 
+Residual Std. Error (df = 398) & \multicolumn{1}{c}{16.093} & \multicolumn{1}{c}{16.093} & \multicolumn{1}{c}{16.093} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular}} 
+\end{table}
+
+
+# Afirmaciones
+
+\begin{table}[!htbp] \centering 
+  \caption{¿Quién tiene más hijes en promedio?} 
+  \label{} 
+   \resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{9}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-10} 
+\\[-1.8ex] & \multicolumn{9}{c}{as.factor(totchi)} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)} & \multicolumn{1}{c}{(6)} & \multicolumn{1}{c}{(7)} & \multicolumn{1}{c}{(8)} & \multicolumn{1}{c}{(9)}\\ 
+\hline \\[-1.8ex] 
+ repub & -0.234 & -0.483 & -0.207 & -0.128 & -0.274 & -0.042 & -0.039 & -0.038 & 0.092 \\ 
+  & (0.294) & (0.332) & (0.299) & (0.340) & (0.344) & (0.232) & (0.217) & (0.221) & (0.250) \\ 
+  nowtot & -0.011 &  &  &  &  &  &  &  &  \\ 
+  & (0.004) &  &  &  &  &  &  &  &  \\ 
+  aauw &  & -0.012 & -0.009 & -0.007 & -0.010 &  &  &  &  \\ 
+  &  & (0.004) & (0.004) & (0.004) & (0.004) &  &  &  &  \\ 
+  rtl &  &  &  &  &  & 0.007 & 0.007 & 0.007 & 0.006 \\ 
+  &  &  &  &  &  & (0.003) & (0.002) & (0.002) & (0.003) \\ 
+  religionNone & -0.394 & -0.438 & -1.293 & -1.325 & -1.291 & -0.454 & -1.254 & -1.270 & -1.216 \\ 
+  & (0.674) & (0.671) & (0.646) & (0.651) & (0.660) & (0.673) & (0.644) & (0.646) & (0.664) \\ 
+  religionCatholic & -0.041 & -0.102 & -0.137 & -0.251 & -0.118 & -0.117 & -0.189 & -0.274 & -0.142 \\ 
+  & (0.178) & (0.176) & (0.169) & (0.171) & (0.174) & (0.177) & (0.169) & (0.170) & (0.175) \\ 
+  religionOther Christian & 1.412 & 1.407 & 0.903 & 0.495 & 0.539 & 1.400 & 0.924 & 0.496 & 0.532 \\ 
+  & (0.417) & (0.416) & (0.378) & (0.380) & (0.386) & (0.417) & (0.376) & (0.377) & (0.387) \\ 
+  religionOther religion & 0.106 & 0.076 & 0.133 & 0.036 & 0.125 & 0.097 & 0.165 & 0.109 & 0.151 \\ 
+  & (0.352) & (0.349) & (0.352) & (0.335) & (0.340) & (0.353) & (0.351) & (0.333) & (0.343) \\ 
+  Constant & 3.015 & 3.285 & 3.066 & 2.899 & 3.036 & 2.079 & 2.088 & 2.089 & 2.049 \\ 
+  & (0.326) & (0.367) & (0.351) & (0.365) & (0.365) & (0.162) & (0.145) & (0.148) & (0.152) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{430} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.067} & \multicolumn{1}{c}{0.071} & \multicolumn{1}{c}{0.069} & \multicolumn{1}{c}{0.056} & \multicolumn{1}{c}{0.060} & \multicolumn{1}{c}{0.066} & \multicolumn{1}{c}{0.075} & \multicolumn{1}{c}{0.068} & \multicolumn{1}{c}{0.056} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.054} & \multicolumn{1}{c}{0.058} & \multicolumn{1}{c}{0.055} & \multicolumn{1}{c}{0.042} & \multicolumn{1}{c}{0.047} & \multicolumn{1}{c}{0.053} & \multicolumn{1}{c}{0.062} & \multicolumn{1}{c}{0.055} & \multicolumn{1}{c}{0.042} \\ 
+Residual Std. Error & \multicolumn{1}{c}{1.603 (df = 423)} & \multicolumn{1}{c}{1.600 (df = 427)} & \multicolumn{1}{c}{1.542 (df = 427)} & \multicolumn{1}{c}{1.552 (df = 427)} & \multicolumn{1}{c}{1.580 (df = 426)} & \multicolumn{1}{c}{1.604 (df = 427)} & \multicolumn{1}{c}{1.536 (df = 427)} & \multicolumn{1}{c}{1.542 (df = 427)} & \multicolumn{1}{c}{1.583 (df = 426)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular}} 
+\end{table}
+
+\begin{table}[!htbp] \centering 
+  \caption{¿Quién tiene más hijes en promedio?} 
+  \label{} 
+     \resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{9}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-10} 
+\\[-1.8ex] & \multicolumn{9}{c}{as.factor(totchi)} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)} & \multicolumn{1}{c}{(6)} & \multicolumn{1}{c}{(7)} & \multicolumn{1}{c}{(8)} & \multicolumn{1}{c}{(9)}\\ 
+\hline \\[-1.8ex] 
+ repub & -0.234 & -0.483 & -0.207 & -0.128 & -0.274 & -0.042 & -0.039 & -0.038 & 0.092 \\ 
+  & (0.294) & (0.332) & (0.299) & (0.340) & (0.344) & (0.232) & (0.217) & (0.221) & (0.250) \\ 
+  nowtot & -0.011^{**} &  &  &  &  &  &  &  &  \\ 
+  & (0.004) &  &  &  &  &  &  &  &  \\ 
+  aauw &  & -0.012^{***} & -0.009^{**} & -0.007^{*} & -0.010^{**} &  &  &  &  \\ 
+  &  & (0.004) & (0.004) & (0.004) & (0.004) &  &  &  &  \\ 
+  rtl &  &  &  &  &  & 0.007^{**} & 0.007^{***} & 0.007^{***} & 0.006^{**} \\ 
+  &  &  &  &  &  & (0.003) & (0.002) & (0.002) & (0.003) \\ 
+  religionNone & -0.394 & -0.438 & -1.293^{**} & -1.325^{**} & -1.291^{*} & -0.454 & -1.254^{*} & -1.270^{**} & -1.216^{*} \\ 
+  & (0.674) & (0.671) & (0.646) & (0.651) & (0.660) & (0.673) & (0.644) & (0.646) & (0.664) \\ 
+  religionCatholic & -0.041 & -0.102 & -0.137 & -0.251 & -0.118 & -0.117 & -0.189 & -0.274 & -0.142 \\ 
+  & (0.178) & (0.176) & (0.169) & (0.171) & (0.174) & (0.177) & (0.169) & (0.170) & (0.175) \\ 
+  religionOther Christian & 1.412^{***} & 1.407^{***} & 0.903^{**} & 0.495 & 0.539 & 1.400^{***} & 0.924^{**} & 0.496 & 0.532 \\ 
+  & (0.417) & (0.416) & (0.378) & (0.380) & (0.386) & (0.417) & (0.376) & (0.377) & (0.387) \\ 
+  religionOther religion & 0.106 & 0.076 & 0.133 & 0.036 & 0.125 & 0.097 & 0.165 & 0.109 & 0.151 \\ 
+  & (0.352) & (0.349) & (0.352) & (0.335) & (0.340) & (0.353) & (0.351) & (0.333) & (0.343) \\ 
+  Constant & 3.015^{***} & 3.285^{***} & 3.066^{***} & 2.899^{***} & 3.036^{***} & 2.079^{***} & 2.088^{***} & 2.089^{***} & 2.049^{***} \\ 
+  & (0.326) & (0.367) & (0.351) & (0.365) & (0.365) & (0.162) & (0.145) & (0.148) & (0.152) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{430} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.067} & \multicolumn{1}{c}{0.071} & \multicolumn{1}{c}{0.069} & \multicolumn{1}{c}{0.056} & \multicolumn{1}{c}{0.060} & \multicolumn{1}{c}{0.066} & \multicolumn{1}{c}{0.075} & \multicolumn{1}{c}{0.068} & \multicolumn{1}{c}{0.056} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.054} & \multicolumn{1}{c}{0.058} & \multicolumn{1}{c}{0.055} & \multicolumn{1}{c}{0.042} & \multicolumn{1}{c}{0.047} & \multicolumn{1}{c}{0.053} & \multicolumn{1}{c}{0.062} & \multicolumn{1}{c}{0.055} & \multicolumn{1}{c}{0.042} \\ 
+Residual Std. Error & \multicolumn{1}{c}{1.603 (df = 423)} & \multicolumn{1}{c}{1.600 (df = 427)} & \multicolumn{1}{c}{1.542 (df = 427)} & \multicolumn{1}{c}{1.552 (df = 427)} & \multicolumn{1}{c}{1.580 (df = 426)} & \multicolumn{1}{c}{1.604 (df = 427)} & \multicolumn{1}{c}{1.536 (df = 427)} & \multicolumn{1}{c}{1.542 (df = 427)} & \multicolumn{1}{c}{1.583 (df = 426)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular}} 
+\end{table} 
+
+## Sin efectos fijos por número de hijos, los coeficientes cambian. En particular, el efecto de las hijas ngirls.
+
+\begin{table}[!htbp] \centering 
+  \caption{Impact of Female Children on Legislator Voting on Women's Issues - NO totchi (number of children) Fixed Effects} 
+  \label{} 
+  \resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{5}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-6} 
+\\[-1.8ex] & \multicolumn{1}{c}{nowtot} & \multicolumn{4}{c}{aauw} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)}\\ 
+\hline \\[-1.8ex] 
+ Number of female children & 0.029 & -0.471 & -0.542 & 0.266 & -0.558 \\ 
+  & (0.730) & (0.794) & (0.811) & (0.737) & (0.770) \\ 
+  Female & 10.869 & 9.529 & 10.409 & 7.478 & 6.943 \\ 
+  & (2.676) & (2.914) & (2.872) & (2.580) & (2.719) \\ 
+  White & 1.593 & 0.613 & 2.828 & -2.729 & 1.429 \\ 
+  & (3.389) & (3.639) & (3.766) & (3.105) & (3.208) \\ 
+  Republican & -45.573 & -61.169 & -56.567 & -64.041 & -64.403 \\ 
+  & (2.094) & (2.280) & (2.316) & (2.088) & (2.429) \\ 
+  Age & 0.618 & 0.902 & 1.746 & 1.179 & 1.934 \\ 
+  & (0.783) & (0.847) & (0.883) & (0.772) & (0.825) \\ 
+  Age squared & -0.006 & -0.008 & -0.016 & -0.011 & -0.018 \\ 
+  & (0.007) & (0.008) & (0.008) & (0.007) & (0.008) \\ 
+  Service length & 0.278 & -0.157 & -0.575 & 0.006 & -0.064 \\ 
+  & (0.297) & (0.323) & (0.373) & (0.339) & (0.324) \\ 
+  Service length squared & -0.011 & -0.0003 & 0.019 & -0.003 & 0.002 \\ 
+  & (0.010) & (0.011) & (0.013) & (0.011) & (0.010) \\ 
+  No religion & 8.636 & 6.494 & 6.514 & 7.679 & -4.635 \\ 
+  & (6.989) & (7.618) & (7.745) & (7.124) & (7.522) \\ 
+  Catholic & -4.013 & -4.825 & -2.435 & -4.379 & -5.027 \\ 
+  & (1.909) & (2.071) & (2.108) & (1.953) & (2.052) \\ 
+  Other Christian & 0.068 & 0.961 & -0.336 & -0.061 & 2.259 \\ 
+  & (4.419) & (4.815) & (4.723) & (4.284) & (4.498) \\ 
+  Other religion & 10.903 & 9.922 & 11.593 & 9.837 & 3.013 \\ 
+  & (3.751) & (4.074) & (4.335) & (3.766) & (3.983) \\ 
+  Democratic vote share & 83.877 & 63.458 & 58.016 & 56.978 & 67.027 \\ 
+  & (10.734) & (11.508) & (11.825) & (8.939) & (10.804) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{430} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.814} & \multicolumn{1}{c}{0.833} & \multicolumn{1}{c}{0.810} & \multicolumn{1}{c}{0.862} & \multicolumn{1}{c}{0.852} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.805} & \multicolumn{1}{c}{0.825} & \multicolumn{1}{c}{0.800} & \multicolumn{1}{c}{0.855} & \multicolumn{1}{c}{0.844} \\ 
+Residual Std. Error & \multicolumn{1}{c}{16.130 (df = 408)} & \multicolumn{1}{c}{17.595 (df = 412)} & \multicolumn{1}{c}{17.898 (df = 412)} & \multicolumn{1}{c}{16.491 (df = 412)} & \multicolumn{1}{c}{17.418 (df = 411)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular}} 
+\end{table} 
+
+# Excluyendo congresistas sin hijes
+\begin{table}[!htbp] \centering 
+  \caption{Impact of Female Children on Legislator Voting on Women's Issues, excluding members of Congress without children.} 
+  \label{}
+    \resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{5}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-6} 
+\\[-1.8ex] & \multicolumn{1}{c}{nowtot} & \multicolumn{4}{c}{aauw} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)}\\ 
+\hline \\[-1.8ex] 
+ Number of female children & 2.244 & 2.392 & 1.609 & 2.462 & 2.327 \\ 
+  & (1.031) & (1.126) & (1.151) & (1.052) & (1.161) \\ 
+  Female & 11.494 & 10.022 & 12.666 & 8.633 & 8.566 \\ 
+  & (2.807) & (3.065) & (3.098) & (2.751) & (3.021) \\ 
+  White & 1.756 & 1.721 & 2.008 & -3.530 & -0.448 \\ 
+  & (3.660) & (3.973) & (4.137) & (3.193) & (3.610) \\ 
+  Republican & -45.296 & -59.537 & -55.479 & -62.224 & -64.375 \\ 
+  & (2.259) & (2.464) & (2.541) & (2.179) & (2.662) \\ 
+  Age & 0.564 & 0.731 & 1.686 & 0.754 & 2.364 \\ 
+  & (0.942) & (1.023) & (1.094) & (0.915) & (1.083) \\ 
+  Age squared & -0.005 & -0.006 & -0.016 & -0.006 & -0.022 \\ 
+  & (0.009) & (0.010) & (0.010) & (0.008) & (0.010) \\ 
+  Service length & 0.231 & -0.106 & -0.642 & -0.353 & -0.203 \\ 
+  & (0.315) & (0.343) & (0.402) & (0.346) & (0.344) \\ 
+  Service length squared & -0.007 & 0.003 & 0.024 & 0.009 & 0.009 \\ 
+  & (0.010) & (0.011) & (0.013) & (0.011) & (0.011) \\ 
+  No religion & 7.276 & 5.821 & 3.744 & 2.670 & -11.407 \\ 
+  & (8.377) & (9.156) & (10.890) & (9.531) & (10.489) \\ 
+  Catholic & -4.279 & -4.258 & -1.740 & -2.993 & -5.186 \\ 
+  & (2.088) & (2.268) & (2.320) & (2.050) & (2.261) \\ 
+  Other Christian & 3.050 & 5.516 & 3.420 & 3.811 & 6.699 \\ 
+  & (4.757) & (5.200) & (5.287) & (4.578) & (5.041) \\ 
+  Other religion & 11.341 & 10.072 & 13.194 & 10.798 & 4.617 \\ 
+  & (3.999) & (4.364) & (4.705) & (3.842) & (4.256) \\ 
+  Democratic vote share & 83.907 & 67.478 & 55.951 & 58.934 & 58.631 \\ 
+  & (11.572) & (12.627) & (13.016) & (9.195) & (11.840) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{371} & \multicolumn{1}{c}{374} & \multicolumn{1}{c}{378} & \multicolumn{1}{c}{379} & \multicolumn{1}{c}{379} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.827} & \multicolumn{1}{c}{0.842} & \multicolumn{1}{c}{0.814} & \multicolumn{1}{c}{0.877} & \multicolumn{1}{c}{0.857} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.812} & \multicolumn{1}{c}{0.828} & \multicolumn{1}{c}{0.799} & \multicolumn{1}{c}{0.866} & \multicolumn{1}{c}{0.844} \\ 
+Residual Std. Error & \multicolumn{1}{c}{15.943 (df = 340)} & \multicolumn{1}{c}{17.430 (df = 343)} & \multicolumn{1}{c}{18.100 (df = 348)} & \multicolumn{1}{c}{15.845 (df = 348)} & \multicolumn{1}{c}{17.421 (df = 347)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular}} 
+\end{table} 
+
+### Proporción de mujeres
+\begin{table}[!htbp] \centering 
+  \caption{Proporción de mujeres por partido político} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{2}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-3} 
+\\[-1.8ex] & \multicolumn{2}{c}{ngirls/totchi} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)}\\ 
+\hline \\[-1.8ex] 
+ repub & -0.042 & -0.040 \\ 
+  & (0.033) & (0.017) \\ 
+  Constant & 0.542 & 0.533 \\ 
+  & (0.024) & (0.012) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{374} & \multicolumn{1}{c}{1,511} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.004} & \multicolumn{1}{c}{0.004} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.002} & \multicolumn{1}{c}{0.003} \\ 
+Residual Std. Error & \multicolumn{1}{c}{0.318 (df = 372)} & \multicolumn{1}{c}{0.328 (df = 1509)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
+
+\begin{table}[!htbp] \centering 
+  \caption{Impact of Female Children on Legislator Voting on Women's Issues (using RTL)} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{4}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-5} 
+\\[-1.8ex] & \multicolumn{4}{c}{I(100 - rtl)} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)}\\ 
+\hline \\[-1.8ex] 
+ Number of female children & 3.347 & 3.437 & 4.403 & 2.554 \\ 
+  & (1.535) & (1.668) & (1.652) & (1.467) \\ 
+  Female & 15.858 & 16.136 & 13.789 & 10.319 \\ 
+  & (3.975) & (4.232) & (3.960) & (3.496) \\ 
+  White & -1.348 & -1.882 & -4.850 & -0.111 \\ 
+  & (5.020) & (5.631) & (4.765) & (4.111) \\ 
+  Republican & -38.220 & -40.049 & -40.124 & -42.165 \\ 
+  & (3.114) & (3.430) & (3.207) & (3.119) \\ 
+  Age & -0.266 & 1.707 & 1.808 & 2.735 \\ 
+  & (1.175) & (1.325) & (1.209) & (1.101) \\ 
+  Age squared & 0.004 & -0.014 & -0.013 & -0.023 \\ 
+  & (0.011) & (0.012) & (0.011) & (0.010) \\ 
+  Service length & -0.059 & -0.806 & -0.578 & -0.014 \\ 
+  & (0.442) & (0.558) & (0.523) & (0.418) \\ 
+  Service length squared & 0.002 & 0.019 & 0.010 & -0.006 \\ 
+  & (0.015) & (0.019) & (0.017) & (0.013) \\ 
+  No religion & 5.577 & 4.403 & 1.630 & 3.294 \\ 
+  & (10.388) & (11.444) & (10.855) & (9.603) \\ 
+  Catholic & -9.365 & -10.018 & -9.388 & -10.942 \\ 
+  & (2.856) & (3.127) & (3.006) & (2.660) \\ 
+  Other Christian & -0.899 & 1.621 & 2.807 & 2.405 \\ 
+  & (6.806) & (7.215) & (6.793) & (5.997) \\ 
+  Other religion & 19.006 & 19.878 & 16.915 & 10.761 \\ 
+  & (5.528) & (6.379) & (5.725) & (5.070) \\ 
+  Democratic vote share & 104.730 & 106.230 & 101.608 & 123.127 \\ 
+  & (15.800) & (17.652) & (13.753) & (13.943) \\ 
+ \hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{434} & \multicolumn{1}{c}{433} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.696} & \multicolumn{1}{c}{0.680} & \multicolumn{1}{c}{0.721} & \multicolumn{1}{c}{0.775} \\ 
+Adjusted R$^{2}$ & \multicolumn{1}{c}{0.673} & \multicolumn{1}{c}{0.656} & \multicolumn{1}{c}{0.699} & \multicolumn{1}{c}{0.757} \\ 
+Residual Std. Error & \multicolumn{1}{c}{23.821 (df = 402)} & \multicolumn{1}{c}{26.264 (df = 403)} & \multicolumn{1}{c}{24.944 (df = 402)} & \multicolumn{1}{c}{22.062 (df = 400)} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table}
